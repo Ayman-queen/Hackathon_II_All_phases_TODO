@@ -1,0 +1,12 @@
+# Task T-204: Backend Docker ignore
+__pycache__
+.venv
+venv
+.env
+.env.local
+.git
+.gitignore
+.pytest_cache
+.mypy_cache
+htmlcov
+.coverage
