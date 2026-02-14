@@ -1,0 +1,16 @@
+# Task T-201: Frontend .gitignore
+node_modules
+.next
+.env.local
+.env.*.local
+.env.production
+.env.production.local
+*.pem
+.DS_Store
+*.log
+dist
+build
+.turbo
+
+.vercel
+prompt.txt
