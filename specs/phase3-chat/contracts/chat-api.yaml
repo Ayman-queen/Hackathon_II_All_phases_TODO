@@ -1,0 +1,36 @@
+openapi: 3.0.0
+info:
+  title: Chat API
+  version: 1.0.0
+paths:
+  /api/{user_id}/chat:
+    post:
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+        - name: Authorization
+          in: header
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id: {type: string}
+                message: {type: string}
+                last_messages: {type: array, items: {type: object}}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response: {type: string}
+                  summary: {type: string}
+                  new_conversation_id: {type: string}
