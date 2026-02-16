@@ -1,0 +1,30 @@
+Update speckit.specify for Phase 4: Cloud-Native Migration. Define:
+
+NFRs: Container startup time < 10s, image size < 200MB, and zero-downtime rolling updates.
+
+Security: No secrets in the codebase; all sensitive data must be managed by K8s Secrets.
+
+Pipeline: Mandatory 100% test pass rate before any container build.
+
+
+Generate speckit.plan for the migration. Outline:
+
+Manifest Structure: Create a /k8s directory containing deployment.yaml, service.yaml, and hpa.yaml.
+
+Docker Strategy: Use python:3.13-slim for the final backend stage and node:20-alpine for the frontend.
+
+CI/CD Logic: Define the .github/workflows/deploy.yml structure.
+
+
+Generate speckit.tasks on branch phase-4-cloud-native:
+
+T-401: Refactor Dockerfiles into multi-stage production builds.
+
+T-402: Create Kubernetes manifests for frontend and backend deployments.
+
+T-403: Setup GitHub Actions for automated testing and image pushing.
+
+T-404: Add Liveness and Readiness probes to the FastAPI /health endpoint.
+
+
+Execute the Phase 4 tasks. Constraint: Ensure the K8s networking correctly resolves the BACKEND_URL for the frontend and maintains the Better Auth JWT handshake. Reference Task IDs in all .yaml and .dockerfile files.

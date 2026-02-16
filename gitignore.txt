@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.coverage
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.tox/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production
+.env.production.local
+
+# Logs
+*.log
+logs/
+
+# Misc
+.git/
+*.tmp
+Thumbs.db
+.gemini/settings.json
+error.txt
+prompt.txt
+.vercel
+vercel.json
