@@ -1,0 +1,229 @@
+# MCP JSON-RPC Contract
+# Feature: 004-mcp-error-handling
+# This documents the expected request/response formats for the MCP server
+
+openapi: "3.0.3"
+info:
+  title: Todo MCP Server
+  description: MCP protocol server for Todo task management via JSON-RPC
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8001
+    description: Local development MCP server
+
+paths:
+  /mcp:
+    post:
+      summary: MCP JSON-RPC endpoint
+      description: Handles all MCP protocol methods via JSON-RPC 2.0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+            examples:
+              initialize:
+                summary: Initialize MCP session
+                value:
+                  jsonrpc: "2.0"
+                  method: "initialize"
+                  params: {}
+                  id: 1
+              tools_list:
+                summary: List available tools
+                value:
+                  jsonrpc: "2.0"
+                  method: "tools/list"
+                  params: {}
+                  id: 2
+              tools_call:
+                summary: Call a tool
+                value:
+                  jsonrpc: "2.0"
+                  method: "tools/call"
+                  params:
+                    name: "add_task"
+                    arguments:
+                      user_id: "user-123"
+                      title: "My new task"
+                  id: 3
+      responses:
+        "200":
+          description: JSON-RPC response (success or error)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/JsonRpcSuccessResponse"
+                  - $ref: "#/components/schemas/JsonRpcErrorResponse"
+
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "Todo MCP Server"
+
+components:
+  schemas:
+    JsonRpcRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        method:
+          type: string
+          description: MCP method name
+          enum:
+            - initialize
+            - tools/list
+            - tools/call
+        params:
+          type: object
+          description: Method-specific parameters
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+          description: Request correlation ID
+
+    JsonRpcSuccessResponse:
+      type: object
+      required:
+        - jsonrpc
+        - result
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          type: object
+          description: Method-specific result
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+
+    JsonRpcErrorResponse:
+      type: object
+      required:
+        - jsonrpc
+        - error
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          $ref: "#/components/schemas/JsonRpcError"
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+            - type: "null"
+
+    JsonRpcError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          description: JSON-RPC error code
+          enum:
+            - -32700  # Parse error
+            - -32600  # Invalid Request
+            - -32601  # Method not found
+            - -32602  # Invalid params
+            - -32603  # Internal error
+        message:
+          type: string
+          description: Human-readable error message
+        data:
+          type: object
+          description: Optional additional error context
+
+    TextContent:
+      type: object
+      required:
+        - type
+        - text
+      properties:
+        type:
+          type: string
+          enum: ["text"]
+          description: Content type discriminator (REQUIRED)
+        text:
+          type: string
+          description: The text content
+
+    ToolCallResult:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/TextContent"
+          minItems: 1
+
+    # Tool-specific argument schemas
+    AddTaskArgs:
+      type: object
+      required:
+        - user_id
+        - title
+      properties:
+        user_id:
+          type: string
+          description: User ID for scoping
+        title:
+          type: string
+          description: Task title
+        description:
+          type: string
+          description: Optional task description
+
+    TaskIdArgs:
+      type: object
+      required:
+        - user_id
+        - task_id
+      properties:
+        user_id:
+          type: string
+          description: User ID for scoping
+        task_id:
+          type: string
+          format: uuid
+          description: Task UUID
+
+    UserIdArgs:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          description: User ID for scoping
