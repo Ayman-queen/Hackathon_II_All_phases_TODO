@@ -1,0 +1,412 @@
+openapi: 3.0.0
+info:
+  title: Evo-TODO Task API
+  version: 1.0.0
+  description: Task management API with JWT authentication
+
+servers:
+  - url: /api
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - priority
+        - completed
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique task identifier
+        user_id:
+          type: string
+          format: uuid
+          description: Owner of the task (from JWT claims)
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Task title
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Task description (optional)
+        priority:
+          type: string
+          enum: [High, Medium, Low]
+          description: Task priority level
+        completed:
+          type: boolean
+          description: Completion status
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - theme_preference
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User identifier
+        email:
+          type: string
+          format: email
+          description: User email from Better Auth
+        name:
+          type: string
+          description: User name
+        theme_preference:
+          type: string
+          enum: [light, dark]
+          default: light
+          description: User's theme preference
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ApiResponse:
+      type: object
+      required:
+        - data
+        - user_id
+        - timestamp
+      properties:
+        data:
+          description: Response data (Task, User, array, etc.)
+        user_id:
+          type: string
+          format: uuid
+          description: Authenticated user ID (for verification)
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+
+    Error:
+      type: object
+      required:
+        - error
+        - status
+      properties:
+        error:
+          type: string
+          description: Error message
+        status:
+          type: integer
+          description: HTTP status code
+        details:
+          type: string
+          nullable: true
+          description: Additional error details
+
+security:
+  - BearerAuth: []
+
+paths:
+  /tasks:
+    get:
+      summary: List all user tasks
+      tags: [Tasks]
+      operationId: listTasks
+      responses:
+        200:
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                data:
+                  tasks:
+                    - id: 550e8400-e29b-41d4-a716-446655440000
+                      user_id: 550e8400-e29b-41d4-a716-446655440001
+                      title: Buy groceries
+                      description: Milk, eggs, bread
+                      priority: Medium
+                      completed: false
+                      created_at: "2025-01-02T10:00:00Z"
+                      updated_at: "2025-01-02T10:00:00Z"
+                user_id: 550e8400-e29b-41d4-a716-446655440001
+                timestamp: "2025-01-02T10:05:00Z"
+        401:
+          description: Unauthorized (missing or invalid JWT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create a new task
+      tags: [Tasks]
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, priority]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 2000
+                priority:
+                  type: string
+                  enum: [High, Medium, Low]
+      responses:
+        201:
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
+
+  /tasks/{task_id}:
+    put:
+      summary: Update a task
+      tags: [Tasks]
+      operationId: updateTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                description:
+                  type: string
+                  maxLength: 2000
+                priority:
+                  type: string
+                  enum: [High, Medium, Low]
+                completed:
+                  type: boolean
+      responses:
+        200:
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        403:
+          description: Forbidden (task not owned by user)
+        404:
+          description: Task not found
+        401:
+          description: Unauthorized
+
+    delete:
+      summary: Delete a task
+      tags: [Tasks]
+      operationId: deleteTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Task deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                data:
+                  success: true
+                user_id: 550e8400-e29b-41d4-a716-446655440001
+                timestamp: "2025-01-02T10:05:00Z"
+        403:
+          description: Forbidden
+        404:
+          description: Task not found
+        401:
+          description: Unauthorized
+
+  /tasks/bulk-delete:
+    post:
+      summary: Delete multiple tasks (bulk operation)
+      tags: [Tasks]
+      operationId: bulkDeleteTasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              properties:
+                task_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 100
+      responses:
+        200:
+          description: Tasks deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                data:
+                  deleted_count: 5
+                  failed_count: 0
+                user_id: 550e8400-e29b-41d4-a716-446655440001
+                timestamp: "2025-01-02T10:05:00Z"
+        400:
+          description: Invalid request
+        401:
+          description: Unauthorized
+
+  /tasks/bulk-complete:
+    post:
+      summary: Mark multiple tasks as complete (bulk operation)
+      tags: [Tasks]
+      operationId: bulkCompleteTasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              properties:
+                task_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 100
+      responses:
+        200:
+          description: Tasks updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                data:
+                  updated_count: 5
+                  failed_count: 0
+                user_id: 550e8400-e29b-41d4-a716-446655440001
+                timestamp: "2025-01-02T10:05:00Z"
+        400:
+          description: Invalid request
+        401:
+          description: Unauthorized
+
+  /users/profile:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      operationId: getUserProfile
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                data:
+                  user:
+                    id: 550e8400-e29b-41d4-a716-446655440001
+                    email: user@example.com
+                    name: John Doe
+                    theme_preference: dark
+                    created_at: "2025-01-01T00:00:00Z"
+                user_id: 550e8400-e29b-41d4-a716-446655440001
+                timestamp: "2025-01-02T10:05:00Z"
+        401:
+          description: Unauthorized
+
+  /users/theme:
+    put:
+      summary: Update user theme preference
+      tags: [Users]
+      operationId: updateUserTheme
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [theme]
+              properties:
+                theme:
+                  type: string
+                  enum: [light, dark]
+      responses:
+        200:
+          description: Theme updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          description: Invalid theme value
+        401:
+          description: Unauthorized
+
+tags:
+  - name: Tasks
+    description: Task management operations
+  - name: Users
+    description: User profile operations
